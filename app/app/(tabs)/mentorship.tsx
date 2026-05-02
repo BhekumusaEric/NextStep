@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Alert, Image, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import {
   useMentors, useMyRequests, useSendRequest, useMyMentorProfile,
   useBecomeMentor, useIncomingRequests, useRespondRequest, Mentor,
@@ -36,6 +37,7 @@ export default function Mentorship() {
   const [skills, setSkills] = useState('')
   const [availability, setAvailability] = useState('')
 
+  const router = useRouter()
   const requestedIds = myRequests.map((r) => r.mentor_id)
   const visibleMentors = (mentors ?? []).filter((m) => m.user_id !== user?.id)
   const pendingCount = incomingRequests.length
@@ -217,6 +219,15 @@ export default function Mentorship() {
                   </TouchableOpacity>
                 </View>
               )}
+              {item.status === 'accepted' && (
+                <TouchableOpacity
+                  style={styles.chatBtn}
+                  onPress={() => router.push({ pathname: '/chat/[requestId]', params: { requestId: item.id, name: item.profiles?.name ?? 'Mentee' } })}
+                >
+                  <Ionicons name="chatbubble-outline" size={14} color="#fff" />
+                  <Text style={styles.acceptBtnText}>Open Chat</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         />
@@ -254,6 +265,15 @@ export default function Mentorship() {
               </View>
               {item.message && (
                 <Text style={styles.requestMessage}>"{item.message}"</Text>
+              )}
+              {item.status === 'accepted' && (
+                <TouchableOpacity
+                  style={styles.chatBtn}
+                  onPress={() => router.push({ pathname: '/chat/[requestId]', params: { requestId: item.id, name: item.mentors?.profiles?.name ?? 'Mentor' } })}
+                >
+                  <Ionicons name="chatbubble-outline" size={14} color="#fff" />
+                  <Text style={styles.acceptBtnText}>Open Chat</Text>
+                </TouchableOpacity>
               )}
             </View>
           )}
@@ -381,6 +401,7 @@ const styles = StyleSheet.create({
   declineBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: Colors.coral },
   acceptBtn: { flex: 2, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.primary, alignItems: 'center' },
   acceptBtnText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#fff' },
+  chatBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.primary },
 
   // Modals
   modal: { flex: 1, backgroundColor: Colors.background },
