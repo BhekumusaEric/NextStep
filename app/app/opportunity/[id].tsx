@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator, Share } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -43,6 +43,13 @@ export default function OpportunityDetail() {
   const isSaved = saved.includes(opportunity.id)
   const countdown = getDaysLeft(opportunity.deadline)
 
+  async function handleShare() {
+    await Share.share({
+      title: opportunity.title,
+      message: `${opportunity.title} at ${opportunity.organization}${opportunity.link ? '\n\nApply here: ' + opportunity.link : ''}\n\nShared via NextStep`,
+    })
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
@@ -51,6 +58,9 @@ export default function OpportunityDetail() {
         </TouchableOpacity>
         <TouchableOpacity onPress={() => toggleSave({ opportunityId: opportunity.id, saved: isSaved })} hitSlop={8}>
           <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={22} color={isSaved ? Colors.gold : Colors.textSecondary} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleShare} hitSlop={8}>
+          <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
 

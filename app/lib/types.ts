@@ -10,6 +10,8 @@ export interface Opportunity {
   eligibility: string | null
   link: string | null
   tags: string[]
+  status: 'pending' | 'approved' | 'rejected'
+  submitted_by: string | null
   created_at: string
 }
 

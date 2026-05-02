@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Share } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Opportunity } from '../lib/types'
@@ -75,6 +75,17 @@ export default function OpportunityCard({ opportunity, saved, onToggleSave }: Pr
             <Text style={[styles.actionText, saved && { color: Colors.gold }]}>
               {saved ? 'Saved' : 'Save'}
             </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => Share.share({
+              title: opportunity.title,
+              message: `${opportunity.title} at ${opportunity.organization}${opportunity.link ? '\n\nApply: ' + opportunity.link : ''}\n\nShared via NextStep`,
+            })}
+          >
+            <Ionicons name="share-outline" size={17} color={Colors.textSecondary} />
+            <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.action} onPress={() => router.push(`/opportunity/${opportunity.id}`)}>

@@ -25,13 +25,13 @@ export const Gradients = {
 }
 
 export const Typography = {
-  // Sora for headlines, Inter for body
-  heading1: { fontSize: 28, fontWeight: '700' as const, color: Colors.textPrimary, letterSpacing: -0.5 },
-  heading2: { fontSize: 22, fontWeight: '700' as const, color: Colors.textPrimary },
-  heading3: { fontSize: 18, fontWeight: '600' as const, color: Colors.textPrimary },
-  body: { fontSize: 15, fontWeight: '400' as const, color: Colors.textSecondary, lineHeight: 22 },
-  caption: { fontSize: 12, fontWeight: '500' as const, color: Colors.textMuted },
-  label: { fontSize: 11, fontWeight: '700' as const, color: Colors.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
+  heading1: { fontSize: 28, fontFamily: 'Sora_700Bold', color: Colors.textPrimary, letterSpacing: -0.5 },
+  heading2: { fontSize: 22, fontFamily: 'Sora_700Bold', color: Colors.textPrimary },
+  heading3: { fontSize: 18, fontFamily: 'Sora_600SemiBold', color: Colors.textPrimary },
+  body: { fontSize: 15, fontFamily: 'Inter_400Regular', color: Colors.textSecondary, lineHeight: 22 },
+  bodyMedium: { fontSize: 15, fontFamily: 'Inter_500Medium', color: Colors.textSecondary },
+  caption: { fontSize: 12, fontFamily: 'Inter_500Medium', color: Colors.textMuted },
+  label: { fontSize: 11, fontFamily: 'Inter_700Bold', color: Colors.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
 }
 
 export const Spacing = {

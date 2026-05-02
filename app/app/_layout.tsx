@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useFonts } from 'expo-font'
+import { Sora_400Regular, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora'
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
+import { View, ActivityIndicator } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { Colors } from '../lib/design'
 
 const queryClient = new QueryClient()
 
@@ -43,6 +48,19 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Sora_400Regular, Sora_600SemiBold, Sora_700Bold,
+    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold,
+  })
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.primary} />
+      </View>
+    )
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthGate />

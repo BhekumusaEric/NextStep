@@ -23,6 +23,7 @@ export function useOpportunities(filter?: OpportunityType) {
       let query = supabase
         .from('opportunities')
         .select('*')
+        .eq('status', 'approved')          // only approved show in feed
         .order('deadline', { ascending: true })
       if (filter) query = query.eq('type', filter)
       const { data, error } = await query
@@ -51,7 +52,6 @@ export function useSavedOpportunities() {
 export function useToggleSave() {
   const user = useAuthStore((s) => s.user)
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async ({ opportunityId, saved }: { opportunityId: string; saved: boolean }) => {
       if (saved) {
@@ -62,5 +62,47 @@ export function useToggleSave() {
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['saved_opportunities'] }),
+  })
+}
+
+export function useSubmitOpportunity() {
+  const user = useAuthStore((s) => s.user)
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      title: string
+      organization: string
+      type: OpportunityType
+      deadline: string | null
+      location: string
+      eligibility: string
+      link: string
+      tags: string[]
+    }) => {
+      const { error } = await supabase.from('opportunities').insert({
+        ...payload,
+        status: 'pending',
+        submitted_by: user?.id ?? null,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my_submissions'] }),
+  })
+}
+
+export function useMySubmissions() {
+  const user = useAuthStore((s) => s.user)
+  return useQuery({
+    queryKey: ['my_submissions', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('opportunities')
+        .select('*')
+        .eq('submitted_by', user!.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as (Opportunity & { status: string })[]
+    },
   })
 }
