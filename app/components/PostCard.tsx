@@ -2,60 +2,80 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Post } from '../hooks/usePosts'
+import { Colors, Radius } from '../lib/design'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  question: '#4f46e5',
-  opportunity: '#059669',
-  interview: '#d97706',
-  career_win: '#db2777',
-  advice: '#0891b2',
+  question: Colors.primary,
+  opportunity: Colors.mint,
+  interview: Colors.gold,
+  career_win: Colors.coral,
+  advice: '#A78BFA',
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
   question: 'Question',
   opportunity: 'Opportunity',
   interview: 'Interview',
-  career_win: '🏆 Win',
+  career_win: 'Win',
   advice: 'Advice',
 }
 
 interface Props {
   post: Post
   onUpvote: () => void
+  upvoted?: boolean
 }
 
-export default function PostCard({ post, onUpvote }: Props) {
+export default function PostCard({ post, onUpvote, upvoted = false }: Props) {
   const router = useRouter()
-  const color = CATEGORY_COLORS[post.category] ?? '#4f46e5'
+  const color = CATEGORY_COLORS[post.category] ?? Colors.primary
   const timeAgo = getTimeAgo(post.created_at)
+  const initial = (post.profiles?.name ?? 'U')[0].toUpperCase()
+  const name = post.profiles?.name ?? 'Anonymous'
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => router.push(`/post/${post.id}`)}>
-      <View style={styles.header}>
-        <View style={styles.authorRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(post.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
-          </View>
-          <View>
-            <Text style={styles.name}>{post.profiles?.name ?? 'Anonymous'}</Text>
-            <Text style={styles.time}>{timeAgo}</Text>
-          </View>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.7}
+      onPress={() => router.push(`/post/${post.id}`)}
+    >
+      {/* Left: Avatar column */}
+      <View style={styles.avatarCol}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initial}</Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: color + '18' }]}>
-          <Text style={[styles.badgeText, { color }]}>{CATEGORY_LABELS[post.category] ?? post.category}</Text>
-        </View>
+        {/* Thread line below avatar */}
+        <View style={styles.threadLine} />
       </View>
 
-      <Text style={styles.content} numberOfLines={3}>{post.content}</Text>
+      {/* Right: Content */}
+      <View style={styles.content}>
+        {/* Name + time + category */}
+        <View style={styles.headerRow}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.dot}>·</Text>
+          <Text style={styles.time}>{timeAgo}</Text>
+          <View style={[styles.categoryDot, { backgroundColor: color }]} />
+          <Text style={[styles.category, { color }]}>{CATEGORY_LABELS[post.category] ?? post.category}</Text>
+        </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.action} onPress={onUpvote}>
-          <Ionicons name="arrow-up-circle-outline" size={18} color="#4f46e5" />
-          <Text style={styles.actionText}>{post.upvotes}</Text>
-        </TouchableOpacity>
-        <View style={styles.action}>
-          <Ionicons name="chatbubble-outline" size={16} color="#888" />
-          <Text style={styles.actionText}>{post.comment_count}</Text>
+        <Text style={styles.body} numberOfLines={4}>{post.content}</Text>
+
+        {/* Action row — X style */}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.action} onPress={() => router.push(`/post/${post.id}`)}>
+            <Ionicons name="chatbubble-outline" size={17} color={Colors.textSecondary} />
+            <Text style={styles.actionText}>{post.comment_count}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.action} onPress={!upvoted ? onUpvote : undefined}>
+            <Ionicons
+              name={upvoted ? 'arrow-up-circle' : 'arrow-up-circle-outline'}
+              size={17}
+              color={upvoted ? Colors.coral : Colors.textSecondary}
+            />
+            <Text style={[styles.actionText, upvoted && { color: Colors.coral }]}>{post.upvotes}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -65,27 +85,100 @@ export default function PostCard({ post, onUpvote }: Props) {
 function getTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return `${mins}m`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs}h`
+  return `${Math.floor(hrs / 24)}d`
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
+    flexDirection: 'row',
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#4f46e5', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  name: { fontSize: 13, fontWeight: '600', color: '#1a1a2e' },
-  time: { fontSize: 11, color: '#aaa' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  content: { fontSize: 14, color: '#333', lineHeight: 20, marginBottom: 12 },
-  footer: { flexDirection: 'row', gap: 16 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { fontSize: 13, color: '#888' },
+  avatarCol: {
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.cardAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  threadLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: Colors.border,
+    marginTop: 6,
+    marginBottom: 0,
+    minHeight: 20,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 12,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 6,
+  },
+  name: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  dot: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  time: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  categoryDot: {
+    width: 5,
+    height: 5,
+    borderRadius: Radius.full,
+    marginLeft: 2,
+  },
+  category: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  body: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
 })

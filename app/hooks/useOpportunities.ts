@@ -1,9 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Opportunity, OpportunityType } from '../lib/types'
 import { useAuthStore } from '../store/authStore'
 
 export function useOpportunities(filter?: OpportunityType) {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('opportunities_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'opportunities' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['opportunities'] })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   return useQuery({
     queryKey: ['opportunities', filter],
     queryFn: async () => {

@@ -3,7 +3,8 @@ import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Activity
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { useComments, useCreateComment, useUpvote, usePosts } from '../../hooks/usePosts'
+import { useComments, useCreateComment, useUpvote, useUpvotedPosts, usePosts } from '../../hooks/usePosts'
+import { Colors, Radius } from '../../lib/design'
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -15,6 +16,8 @@ export default function PostDetail() {
   const { data: comments, isLoading } = useComments(id)
   const { mutate: createComment, isPending } = useCreateComment()
   const { mutate: upvote } = useUpvote()
+  const { data: upvoted = [] } = useUpvotedPosts()
+  const isUpvoted = upvoted.includes(id)
 
   function handleComment() {
     if (!text.trim()) return
@@ -25,7 +28,7 @@ export default function PostDetail() {
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topTitle}>Post</Text>
         <View style={{ width: 24 }} />
@@ -39,6 +42,7 @@ export default function PostDetail() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={post ? (
             <View style={styles.postBlock}>
+              {/* Author row */}
               <View style={styles.authorRow}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>{(post.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
@@ -48,21 +52,38 @@ export default function PostDetail() {
                   {post.profiles?.university && <Text style={styles.uni}>{post.profiles.university}</Text>}
                 </View>
               </View>
+
               <Text style={styles.postContent}>{post.content}</Text>
-              <TouchableOpacity style={styles.upvoteRow} onPress={() => upvote(post.id)}>
-                <Ionicons name="arrow-up-circle-outline" size={20} color="#4f46e5" />
-                <Text style={styles.upvoteText}>{post.upvotes} upvotes</Text>
-              </TouchableOpacity>
-              <Text style={styles.commentsLabel}>Comments</Text>
+
+              {/* Action row */}
+              <View style={styles.actions}>
+                <View style={styles.action}>
+                  <Ionicons name="chatbubble-outline" size={17} color={Colors.textSecondary} />
+                  <Text style={styles.actionText}>{post.comment_count}</Text>
+                </View>
+                <TouchableOpacity style={styles.action} onPress={() => !isUpvoted && upvote(post.id)}>
+                  <Ionicons
+                    name={isUpvoted ? 'arrow-up-circle' : 'arrow-up-circle-outline'}
+                    size={17}
+                    color={isUpvoted ? Colors.coral : Colors.textSecondary}
+                  />
+                  <Text style={[styles.actionText, isUpvoted && { color: Colors.coral }]}>{post.upvotes}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.commentsLabel}>Replies</Text>
             </View>
           ) : null}
           ListEmptyComponent={
-            !isLoading ? <Text style={styles.empty}>No comments yet. Start the conversation.</Text> : null
+            !isLoading ? <Text style={styles.empty}>No replies yet. Start the conversation.</Text> : null
           }
           renderItem={({ item }) => (
             <View style={styles.comment}>
-              <View style={styles.commentAvatar}>
-                <Text style={styles.avatarText}>{(item.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+              <View style={styles.commentAvatarCol}>
+                <View style={styles.commentAvatar}>
+                  <Text style={styles.commentAvatarText}>{(item.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+                </View>
+                <View style={styles.threadLine} />
               </View>
               <View style={styles.commentBody}>
                 <Text style={styles.commentName}>{item.profiles?.name ?? 'Anonymous'}</Text>
@@ -75,13 +96,14 @@ export default function PostDetail() {
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Add a comment..."
+            placeholder="Add a reply..."
+            placeholderTextColor={Colors.textMuted}
             value={text}
             onChangeText={setText}
             multiline
           />
           <TouchableOpacity style={styles.sendBtn} onPress={handleComment} disabled={isPending}>
-            <Ionicons name="send" size={18} color="#fff" />
+            <Ionicons name="send" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -90,27 +112,31 @@ export default function PostDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fb' },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
-  topTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a2e' },
-  list: { paddingHorizontal: 16, paddingBottom: 16 },
-  postBlock: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  topTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  list: { paddingBottom: 16 },
+  postBlock: { padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#4f46e5', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  name: { fontSize: 14, fontWeight: '600', color: '#1a1a2e' },
-  uni: { fontSize: 12, color: '#888' },
-  postContent: { fontSize: 15, color: '#333', lineHeight: 22, marginBottom: 14 },
-  upvoteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  upvoteText: { fontSize: 13, color: '#4f46e5', fontWeight: '600' },
-  commentsLabel: { fontSize: 13, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 },
-  empty: { textAlign: 'center', color: '#aaa', marginTop: 24, fontSize: 14 },
-  comment: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  commentAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#e0e7ff', justifyContent: 'center', alignItems: 'center' },
-  commentBody: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12 },
-  commentName: { fontSize: 12, fontWeight: '600', color: '#1a1a2e', marginBottom: 4 },
-  commentText: { fontSize: 14, color: '#333', lineHeight: 20 },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#f0f0f0' },
-  input: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, maxHeight: 100 },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#4f46e5', justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 42, height: 42, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: Colors.textPrimary, fontWeight: '700', fontSize: 15 },
+  name: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  uni: { fontSize: 12, color: Colors.textSecondary },
+  postContent: { fontSize: 16, color: Colors.textPrimary, lineHeight: 24, marginBottom: 16 },
+  actions: { flexDirection: 'row', gap: 24, marginBottom: 20 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  actionText: { fontSize: 13, color: Colors.textSecondary },
+  commentsLabel: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
+  empty: { textAlign: 'center', color: Colors.textMuted, marginTop: 24, fontSize: 14 },
+  comment: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  commentAvatarCol: { alignItems: 'center', marginRight: 10 },
+  commentAvatar: { width: 34, height: 34, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  commentAvatarText: { color: Colors.textPrimary, fontWeight: '700', fontSize: 12 },
+  threadLine: { flex: 1, width: 2, backgroundColor: Colors.border, marginTop: 4, minHeight: 16 },
+  commentBody: { flex: 1, paddingBottom: 14 },
+  commentName: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  commentText: { fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12, backgroundColor: Colors.card, borderTopWidth: 1, borderTopColor: Colors.border },
+  input: { flex: 1, backgroundColor: Colors.cardAlt, borderRadius: Radius.full, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, maxHeight: 100, color: Colors.textPrimary, borderWidth: 1, borderColor: Colors.border },
+  sendBtn: { width: 38, height: 38, borderRadius: Radius.full, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
 })

@@ -3,6 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 const queryClient = new QueryClient()
 
@@ -26,10 +27,18 @@ function AuthGate() {
   useEffect(() => {
     if (!ready) return
     const inAuth = segments[0] === '(auth)'
-    if (!session && !inAuth) router.replace('/(auth)/sign-in')
-    if (session && inAuth) router.replace('/(tabs)/home')
+    const inOnboarding = segments[0] === 'onboarding'
+    if (!session && !inAuth) { router.replace('/(auth)/sign-in'); return }
+    if (session && inAuth) {
+      // Check if profile has a name — if not, send to onboarding
+      supabase.from('profiles').select('name').eq('id', session.user.id).single().then(({ data }) => {
+        if (!data?.name) router.replace('/onboarding')
+        else router.replace('/(tabs)/home')
+      })
+    }
   }, [ready, session, segments])
 
+  usePushNotifications()
   return <Slot />
 }
 

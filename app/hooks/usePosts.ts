@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
@@ -23,6 +24,18 @@ export interface Comment {
 }
 
 export function usePosts() {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('posts_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['posts'] })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   return useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
@@ -79,12 +92,33 @@ export function useCreateComment() {
 }
 
 export function useUpvote() {
+  const user = useAuthStore((s) => s.user)
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (postId: string) => {
-      const { error } = await supabase.rpc('increment_upvotes', { post_id: postId })
-      if (error) throw error
+      // Check if already upvoted
+      const { data: existing } = await supabase
+        .from('post_upvotes')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', user!.id)
+        .single()
+      if (existing) return // already upvoted, do nothing
+      await supabase.from('post_upvotes').insert({ post_id: postId, user_id: user!.id })
+      await supabase.rpc('increment_upvotes', { post_id: postId })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+  })
+}
+
+export function useUpvotedPosts() {
+  const user = useAuthStore((s) => s.user)
+  return useQuery({
+    queryKey: ['upvoted_posts', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from('post_upvotes').select('post_id').eq('user_id', user!.id)
+      return (data ?? []).map((r) => r.post_id) as string[]
+    },
   })
 }

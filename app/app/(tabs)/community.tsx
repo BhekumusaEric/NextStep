@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { usePosts, useCreatePost, useUpvote } from '../../hooks/usePosts'
+import { usePosts, useCreatePost, useUpvote, useUpvotedPosts } from '../../hooks/usePosts'
 import PostCard from '../../components/PostCard'
+import { Colors } from '../../lib/design'
 
 const CATEGORIES = ['question', 'opportunity', 'interview', 'career_win', 'advice']
 const CATEGORY_LABELS: Record<string, string> = {
@@ -12,6 +13,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function Community() {
   const { data: posts, isLoading } = usePosts()
+  const { data: upvoted = [] } = useUpvotedPosts()
   const { mutate: upvote } = useUpvote()
   const { mutate: createPost, isPending } = useCreatePost()
   const [modal, setModal] = useState(false)
@@ -36,7 +38,7 @@ export default function Community() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#4f46e5" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={Colors.primary} />
       ) : (
         <FlatList
           data={posts}
@@ -45,7 +47,7 @@ export default function Community() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<Text style={styles.empty}>No posts yet. Be the first to share something.</Text>}
           renderItem={({ item }) => (
-            <PostCard post={item} onUpvote={() => upvote(item.id)} />
+            <PostCard post={item} upvoted={upvoted.includes(item.id)} onUpvote={() => upvote(item.id)} />
           )}
         />
       )}
@@ -91,22 +93,22 @@ export default function Community() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fb' },
+  container: { flex: 1, backgroundColor: Colors.background },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#1a1a2e' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#4f46e5', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
+  heading: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
   newBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  empty: { textAlign: 'center', color: '#aaa', marginTop: 60, fontSize: 14 },
-  modal: { flex: 1, backgroundColor: '#fff' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderColor: '#f0f0f0' },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a2e' },
-  cancel: { fontSize: 15, color: '#888' },
-  postBtn: { fontSize: 15, fontWeight: '700', color: '#4f46e5' },
+  list: { paddingBottom: 24 },
+  empty: { textAlign: 'center', color: Colors.textMuted, marginTop: 60, fontSize: 14 },
+  modal: { flex: 1, backgroundColor: Colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderColor: Colors.border },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  cancel: { fontSize: 15, color: Colors.textMuted },
+  postBtn: { fontSize: 15, fontWeight: '700', color: Colors.primary },
   categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
-  catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
-  catChipActive: { backgroundColor: '#4f46e5', borderColor: '#4f46e5' },
-  catText: { fontSize: 12, color: '#555', fontWeight: '500' },
+  catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border },
+  catChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  catText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
   catTextActive: { color: '#fff' },
-  textInput: { flex: 1, padding: 16, fontSize: 15, color: '#1a1a2e', textAlignVertical: 'top' },
+  textInput: { flex: 1, padding: 16, fontSize: 15, color: Colors.textPrimary, textAlignVertical: 'top' },
 })
