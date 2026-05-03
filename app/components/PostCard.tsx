@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Post } from '../hooks/usePosts'
@@ -42,7 +43,10 @@ export default function PostCard({ post, onUpvote, upvoted = false }: Props) {
       {/* Left: Avatar column */}
       <View style={styles.avatarCol}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
+          {post.profiles?.avatar_url
+            ? <Image source={post.profiles.avatar_url} style={styles.avatarImg} contentFit="cover" cachePolicy="none" />
+            : <Text style={styles.avatarText}>{initial}</Text>
+          }
         </View>
         {/* Thread line below avatar */}
         <View style={styles.threadLine} />
@@ -108,12 +112,17 @@ const styles = StyleSheet.create({
   avatar: {
     width: 40,
     height: 40,
-    borderRadius: Radius.full,
+    borderRadius: 20,
     backgroundColor: Colors.cardAlt,
     borderWidth: 1,
     borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: 40,
+    height: 40,
   },
   avatarText: {
     fontSize: 15,

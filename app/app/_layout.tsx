@@ -25,6 +25,12 @@ function AuthGate() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (_event === 'SIGNED_IN' && session) {
+        supabase.from('profiles').select('name').eq('id', session.user.id).single().then(({ data }) => {
+          if (!data?.name) router.replace('/onboarding')
+          else router.replace('/(tabs)/home')
+        })
+      }
     })
     return () => subscription.unsubscribe()
   }, [])

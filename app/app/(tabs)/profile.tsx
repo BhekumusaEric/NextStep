@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native'
+import { useRef } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,6 +16,11 @@ export default function Profile() {
   const { data: profile } = useProfile()
   const { data: saved = [] } = useSavedOpportunities()
 
+  // Keep last known avatar URL so it never goes blank during refetch
+  const avatarRef = useRef<string | null>(null)
+  if (profile?.avatar_url) avatarRef.current = profile.avatar_url
+  const avatarUrl = avatarRef.current
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -27,8 +34,12 @@ export default function Profile() {
         {/* Avatar + name */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrap}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+            {avatarUrl ? (
+              <Image
+                source={avatarUrl}
+                style={styles.avatar}
+                contentFit="cover"
+              />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarText}>{(profile?.name ?? user?.email ?? 'U')[0].toUpperCase()}</Text>
@@ -99,8 +110,8 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   heading: { fontSize: 20, fontFamily: 'Sora_700Bold', color: Colors.textPrimary },
   profileHeader: { padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  avatarWrap: { marginBottom: 12 },
-  avatar: { width: 72, height: 72, borderRadius: Radius.full },
+  avatarWrap: { marginBottom: 12, width: 72, height: 72 },
+  avatar: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden' },
   avatarFallback: { width: 72, height: 72, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 2, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: Colors.primary, fontSize: 26, fontWeight: '700' },
   name: { fontSize: 20, fontFamily: 'Sora_700Bold', color: Colors.textPrimary, marginBottom: 2 },

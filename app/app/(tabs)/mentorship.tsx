@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Alert, Image, ScrollView } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Alert, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -128,7 +129,7 @@ export default function Mentorship() {
                   <View style={styles.cardHeader}>
                     <View style={styles.avatar}>
                       {item.profiles?.avatar_url
-                        ? <Image source={{ uri: item.profiles.avatar_url }} style={styles.avatarImg} />
+                        ? <Image source={item.profiles.avatar_url} style={styles.avatarImg} contentFit="cover" cachePolicy="none" />
                         : <Text style={styles.avatarText}>{(item.profiles?.name ?? 'M')[0].toUpperCase()}</Text>
                       }
                     </View>
@@ -375,8 +376,8 @@ const styles = StyleSheet.create({
   // Mentor card
   card: { borderBottomWidth: 1, borderBottomColor: Colors.border, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-  avatar: { width: 44, height: 44, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
-  avatarImg: { width: 44, height: 44, borderRadius: Radius.full },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarImg: { width: 44, height: 44 },
   avatarText: { color: Colors.textPrimary, fontFamily: 'Inter_700Bold', fontSize: 16 },
   mentorName: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: Colors.textPrimary },
   industry: { fontSize: 12, fontFamily: 'Inter_400Regular', color: Colors.textSecondary, marginTop: 2 },

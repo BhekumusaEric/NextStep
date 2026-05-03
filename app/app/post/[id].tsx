@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -45,7 +46,10 @@ export default function PostDetail() {
               {/* Author row */}
               <View style={styles.authorRow}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{(post.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+                  {post.profiles?.avatar_url
+                    ? <Image source={post.profiles.avatar_url} style={styles.avatarImg} contentFit="cover" cachePolicy="none" />
+                    : <Text style={styles.avatarText}>{(post.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+                  }
                 </View>
                 <View>
                   <Text style={styles.name}>{post.profiles?.name ?? 'Anonymous'}</Text>
@@ -81,7 +85,10 @@ export default function PostDetail() {
             <View style={styles.comment}>
               <View style={styles.commentAvatarCol}>
                 <View style={styles.commentAvatar}>
-                  <Text style={styles.commentAvatarText}>{(item.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+                  {item.profiles?.avatar_url
+                    ? <Image source={item.profiles.avatar_url} style={styles.commentAvatarImg} contentFit="cover" cachePolicy="none" />
+                    : <Text style={styles.commentAvatarText}>{(item.profiles?.name ?? 'U')[0].toUpperCase()}</Text>
+                  }
                 </View>
                 <View style={styles.threadLine} />
               </View>
@@ -118,7 +125,8 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 16 },
   postBlock: { padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.border },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  avatar: { width: 42, height: 42, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 42, height: 42, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarImg: { width: 42, height: 42, borderRadius: Radius.full },
   avatarText: { color: Colors.textPrimary, fontWeight: '700', fontSize: 15 },
   name: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   uni: { fontSize: 12, color: Colors.textSecondary },
@@ -130,7 +138,8 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', color: Colors.textMuted, marginTop: 24, fontSize: 14 },
   comment: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
   commentAvatarCol: { alignItems: 'center', marginRight: 10 },
-  commentAvatar: { width: 34, height: 34, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  commentAvatar: { width: 34, height: 34, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  commentAvatarImg: { width: 34, height: 34, borderRadius: Radius.full },
   commentAvatarText: { color: Colors.textPrimary, fontWeight: '700', fontSize: 12 },
   threadLine: { flex: 1, width: 2, backgroundColor: Colors.border, marginTop: 4, minHeight: 16 },
   commentBody: { flex: 1, paddingBottom: 14 },

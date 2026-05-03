@@ -23,7 +23,8 @@ export function useOpportunities(filter?: OpportunityType) {
       let query = supabase
         .from('opportunities')
         .select('*')
-        .eq('status', 'approved')          // only approved show in feed
+        .eq('status', 'approved')
+        .eq('is_archived', false)          // exclude archived
         .order('deadline', { ascending: true })
       if (filter) query = query.eq('type', filter)
       const { data, error } = await query

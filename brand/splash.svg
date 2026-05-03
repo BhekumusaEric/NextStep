@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1284" height="2778" viewBox="0 0 1284 2778">
+  <!-- Background: pure black -->
+  <rect width="1284" height="2778" fill="#000000"/>
+
+  <!-- Centered icon group -->
+  <g transform="translate(492, 1089)">
+    <!-- Step 1 -->
+    <rect x="0" y="250" width="120" height="40" rx="12" fill="#6D5DF6"/>
+    <rect x="80" y="170" width="40" height="120" rx="12" fill="#6D5DF6"/>
+    <!-- Step 2 -->
+    <rect x="80" y="170" width="120" height="40" rx="12" fill="#6D5DF6"/>
+    <rect x="160" y="90" width="40" height="120" rx="12" fill="#6D5DF6"/>
+    <!-- Step 3 -->
+    <rect x="160" y="90" width="120" height="40" rx="12" fill="#6D5DF6"/>
+    <rect x="240" y="10" width="40" height="120" rx="12" fill="#6D5DF6"/>
+    <!-- Top platform (mint) -->
+    <rect x="240" y="10" width="120" height="40" rx="12" fill="#4ECDC4"/>
+    <!-- Arrow tip -->
+    <polygon points="370,0 410,40 370,40" fill="#4ECDC4"/>
+    <polygon points="370,0 410,0 410,40" fill="#4ECDC4"/>
+  </g>
+
+  <!-- Wordmark: NextStep -->
+  <text
+    x="642"
+    y="1560"
+    text-anchor="middle"
+    font-family="'Sora', 'Arial', sans-serif"
+    font-weight="700"
+    font-size="72"
+    fill="#E7E9EA"
+    letter-spacing="-1"
+  >NextStep</text>
+
+  <!-- Tagline -->
+  <text
+    x="642"
+    y="1630"
+    text-anchor="middle"
+    font-family="'Inter', 'Arial', sans-serif"
+    font-weight="400"
+    font-size="32"
+    fill="#71767B"
+    letter-spacing="1"
+  >Your career, elevated.</text>
+</svg>

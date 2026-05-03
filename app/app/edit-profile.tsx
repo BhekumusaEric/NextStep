@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -35,10 +36,13 @@ export default function EditProfile() {
   const [localAvatar, setLocalAvatar] = useState<string | null>(null)
 
   async function pickAvatar() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 })
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 })
     if (!result.canceled) {
-      setLocalAvatar(result.assets[0].uri)
-      uploadAvatar(result.assets[0].uri)
+      const uri = result.assets[0].uri
+      setLocalAvatar(uri)
+      uploadAvatar(uri, {
+        onSuccess: () => setLocalAvatar(null), // clear so profile.avatar_url takes over
+      })
     }
   }
 
@@ -69,8 +73,10 @@ export default function EditProfile() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={90}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading}>
-            {localAvatar || profile?.avatar_url ? (
-              <Image source={{ uri: localAvatar ?? profile!.avatar_url }} style={styles.avatar} />
+            {localAvatar ? (
+              <Image source={localAvatar} style={styles.avatar} contentFit="cover" />
+            ) : profile?.avatar_url ? (
+              <Image source={profile.avatar_url} style={styles.avatar} contentFit="cover" />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarText}>{(name || 'U')[0].toUpperCase()}</Text>
@@ -119,8 +125,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   saveBtn: { fontSize: 15, fontWeight: '700', color: Colors.primary },
   content: { padding: 20, paddingBottom: 40 },
-  avatarWrap: { alignSelf: 'center', marginBottom: 28, position: 'relative' },
-  avatar: { width: 80, height: 80, borderRadius: Radius.full },
+  avatarWrap: { alignSelf: 'center', marginBottom: 28, position: 'relative', width: 80, height: 80 },
+  avatar: { width: 80, height: 80, borderRadius: 40, overflow: 'hidden' },
   avatarFallback: { width: 80, height: 80, borderRadius: Radius.full, backgroundColor: Colors.cardAlt, borderWidth: 2, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: Colors.primary, fontSize: 28, fontWeight: '700' },
   avatarOverlay: { position: 'absolute', bottom: 0, right: 0, backgroundColor: Colors.primary, borderRadius: 12, padding: 5 },
