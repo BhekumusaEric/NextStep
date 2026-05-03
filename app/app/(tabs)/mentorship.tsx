@@ -41,7 +41,7 @@ export default function Mentorship() {
   const router = useRouter()
   const requestedIds = myRequests.map((r) => r.mentor_id)
   const visibleMentors = (mentors ?? []).filter((m) => m.user_id !== user?.id)
-  const pendingCount = incomingRequests.length
+  const pendingCount = incomingRequests.filter(r => r.status === 'pending').length
 
   function handleSendRequest() {
     if (!message.trim()) return Alert.alert('Add a message to your request')

@@ -62,7 +62,8 @@ export function useIncomingRequests(mentorId?: string) {
         .from('mentorship_requests')
         .select('*, profiles(name)')
         .eq('mentor_id', mentorId!)
-        .eq('status', 'pending')
+        .neq('status', 'declined')          // show pending + accepted
+        .order('created_at', { ascending: false })
       if (error) throw error
       return data as MentorshipRequest[]
     },
@@ -92,7 +93,10 @@ export function useRespondRequest() {
       const { error } = await supabase.from('mentorship_requests').update({ status }).eq('id', requestId)
       if (error) throw error
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['incoming_requests'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incoming_requests'] })
+      queryClient.invalidateQueries({ queryKey: ['my_requests'] })
+    },
   })
 }
 

@@ -1,0 +1,103 @@
+name: NextStep Mobile CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+
+jobs:
+  # ─────────────────────────────────────────
+  # Run on every PR — type check + lint
+  # ─────────────────────────────────────────
+  check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  # ─────────────────────────────────────────
+  # Preview APK build on every PR
+  # ─────────────────────────────────────────
+  preview:
+    name: Preview Build (Android APK)
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build preview APK
+        run: eas build --platform android --profile preview --non-interactive
+
+  # ─────────────────────────────────────────
+  # Production build on push to main
+  # ─────────────────────────────────────────
+  production:
+    name: Production Build (Android AAB)
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production AAB
+        run: eas build --platform android --profile production --non-interactive
+
+      - name: Update OTA (over-the-air JS update)
+        run: eas update --branch production --message "Release from ${{ github.sha }}" --non-interactive

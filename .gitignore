@@ -1,0 +1,15 @@
+# App
+app/node_modules/
+app/.expo/
+app/.env
+app/android/
+app/ios/
+
+# Admin
+admin/node_modules/
+admin/.next/
+admin/.env.local
+
+# General
+.DS_Store
+*.log
