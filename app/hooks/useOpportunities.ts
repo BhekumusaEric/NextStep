@@ -19,6 +19,9 @@ export function useOpportunities(filter?: OpportunityType) {
 
   return useQuery({
     queryKey: ['opportunities', filter],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       let query = supabase
         .from('opportunities')

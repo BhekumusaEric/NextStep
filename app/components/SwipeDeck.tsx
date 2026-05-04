@@ -6,7 +6,8 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Opportunity } from '../lib/types'
-import { Colors, Radius, getDaysLeft } from '../lib/design'
+import { Colors, Radius, getDaysLeft, getCompanyLogo } from '../lib/design'
+import AppImage from './AppImage'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3
@@ -208,7 +209,19 @@ function CardContent({ opportunity, saved, router }: { opportunity: Opportunity;
         </View>
 
         <Text style={styles.title}>{opportunity.title}</Text>
-        <Text style={styles.org}>{opportunity.organization}</Text>
+
+        {/* Org row with logo */}
+        <View style={styles.orgRow}>
+          <AppImage
+            uri={getCompanyLogo(opportunity.organization)}
+            style={styles.logo}
+            contentFit="contain"
+            fallbackText={opportunity.organization}
+            fallbackBg="#fff"
+            isLogo
+          />
+          <Text style={styles.org}>{opportunity.organization}</Text>
+        </View>
 
         {opportunity.location && (
           <View style={styles.locationRow}>
@@ -300,6 +313,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.textSecondary,
     marginBottom: 16,
+  },
+  orgRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  logo: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.sm,
+    backgroundColor: '#fff',
+    flexShrink: 0,
+  },
+  logoFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.cardAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  logoFallbackText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   locationRow: {
     flexDirection: 'row',

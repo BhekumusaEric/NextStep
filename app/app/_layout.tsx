@@ -10,7 +10,14 @@ import { useAuthStore } from '../store/authStore'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { Colors } from '../lib/design'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    },
+  },
+})
 
 function AuthGate() {
   const { session, setSession } = useAuthStore()

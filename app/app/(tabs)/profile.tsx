@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
-import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,6 +8,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useProfile } from '../../hooks/useProfile'
 import { useSavedOpportunities } from '../../hooks/useOpportunities'
 import { Colors, Radius } from '../../lib/design'
+import AppImage from '../../components/AppImage'
 
 export default function Profile() {
   const user = useAuthStore((s) => s.user)
@@ -34,17 +34,14 @@ export default function Profile() {
         {/* Avatar + name */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrap}>
-            {avatarUrl ? (
-              <Image
-                source={avatarUrl}
-                style={styles.avatar}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarText}>{(profile?.name ?? user?.email ?? 'U')[0].toUpperCase()}</Text>
-              </View>
-            )}
+            <AppImage
+              uri={avatarUrl}
+              style={styles.avatar}
+              contentFit="cover"
+              fallbackText={profile?.name ?? user?.email ?? 'U'}
+              fallbackBg={Colors.cardAlt}
+              isAvatar
+            />
           </View>
           <Text style={styles.name}>{profile?.name ?? 'Your Name'}</Text>
           {profile?.university && <Text style={styles.uni}>{profile.university}</Text>}

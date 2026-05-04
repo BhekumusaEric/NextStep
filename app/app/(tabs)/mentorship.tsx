@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Alert, ScrollView } from 'react-native'
-import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -8,10 +7,12 @@ import {
   useMentors, useMyRequests, useSendRequest, useMyMentorProfile,
   useBecomeMentor, useIncomingRequests, useRespondRequest, Mentor,
 } from '../../hooks/useMentorship'
+import { useHuddles, useCreateHuddle, useToggleRSVP, useDeleteHuddle, useGoLive, useEndHuddle } from '../../hooks/useHuddles'
 import { useAuthStore } from '../../store/authStore'
 import { Colors, Radius } from '../../lib/design'
+import AppImage from '../../components/AppImage'
 
-type Tab = 'discover' | 'requests'
+type Tab = 'discover' | 'huddles' | 'requests'
 
 const STATUS_COLOR: Record<string, string> = {
   pending: Colors.gold,
@@ -29,8 +30,21 @@ export default function Mentorship() {
   const { data: incomingRequests = [] } = useIncomingRequests(myMentorProfile?.id)
   const user = useAuthStore((s) => s.user)
 
+  const { data: huddles = [] } = useHuddles()
+  const { mutate: toggleRSVP } = useToggleRSVP()
+  const { mutate: deleteHuddle } = useDeleteHuddle()
+  const { mutate: goLive } = useGoLive()
+  const { mutate: endHuddle } = useEndHuddle()
+  const { mutate: createHuddle, isPending: creatingHuddle } = useCreateHuddle()
+
   const [tab, setTab] = useState<Tab>('discover')
   const [selected, setSelected] = useState<Mentor | null>(null)
+  const [huddleModal, setHuddleModal] = useState(false)
+  const [huddleTitle, setHuddleTitle] = useState('')
+  const [huddleDesc, setHuddleDesc] = useState('')
+  const [huddleDate, setHuddleDate] = useState('')
+  const [huddleTime, setHuddleTime] = useState('')
+  const [huddleCapacity, setHuddleCapacity] = useState('20')
   const [message, setMessage] = useState('')
   const [becomeModal, setBecomeModal] = useState(false)
   const [industry, setIndustry] = useState('')
@@ -42,6 +56,34 @@ export default function Mentorship() {
   const requestedIds = myRequests.map((r) => r.mentor_id)
   const visibleMentors = (mentors ?? []).filter((m) => m.user_id !== user?.id)
   const pendingCount = incomingRequests.filter(r => r.status === 'pending').length
+
+  function handleCreateHuddle(startNow = false) {
+    if (!huddleTitle.trim()) return Alert.alert('Title is required')
+    if (!startNow && (!huddleDate.trim() || !huddleTime.trim()))
+      return Alert.alert('Date and time are required, or tap "Start Now"')
+    const parsed = startNow ? new Date() : new Date(`${huddleDate.trim()}T${huddleTime.trim()}:00`)
+    if (!startNow && isNaN(parsed.getTime()))
+      return Alert.alert('Invalid date or time', 'Use format YYYY-MM-DD and HH:MM')
+    createHuddle({
+      title: huddleTitle.trim(),
+      description: huddleDesc.trim(),
+      scheduled_at: parsed.toISOString(),
+      capacity: parseInt(huddleCapacity) || 20,
+      status: startNow ? 'live' : 'upcoming',
+    }, {
+      onSuccess: (data) => {
+        setHuddleModal(false)
+        setHuddleTitle(''); setHuddleDesc(''); setHuddleDate(''); setHuddleTime('')
+        setTab('huddles')
+        if (startNow && data?.id) {
+          router.push({
+            pathname: '/huddle/[huddleId]',
+            params: { huddleId: data.id, title: huddleTitle.trim(), hostId: user!.id },
+          })
+        }
+      },
+    })
+  }
 
   function handleSendRequest() {
     if (!message.trim()) return Alert.alert('Add a message to your request')
@@ -72,36 +114,17 @@ export default function Mentorship() {
         )}
       </View>
 
-      {/* Tab switcher — only show Requests tab if user is a mentor */}
       <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'discover' && styles.tabBtnActive]}
-          onPress={() => setTab('discover')}
-        >
-          <Text style={[styles.tabText, tab === 'discover' && styles.tabTextActive]}>Discover</Text>
+        <TouchableOpacity style={[styles.tabBtn, tab === 'discover' && styles.tabBtnActive]} onPress={() => setTab('discover')}>
+          <Text style={[styles.tabText, tab === 'discover' && styles.tabTextActive]}>Mentors</Text>
         </TouchableOpacity>
-
-        {myMentorProfile && (
-          <TouchableOpacity
-            style={[styles.tabBtn, tab === 'requests' && styles.tabBtnActive]}
-            onPress={() => setTab('requests')}
-          >
-            <Text style={[styles.tabText, tab === 'requests' && styles.tabTextActive]}>Requests</Text>
-            {pendingCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{pendingCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'requests' && !myMentorProfile && styles.tabBtnActive]}
-          onPress={() => setTab('requests')}
-        >
-          <Text style={[styles.tabText, tab === 'requests' && !myMentorProfile && styles.tabTextActive]}>
-            My Requests
-          </Text>
+        <TouchableOpacity style={[styles.tabBtn, tab === 'huddles' && styles.tabBtnActive]} onPress={() => setTab('huddles')}>
+          <Text style={[styles.tabText, tab === 'huddles' && styles.tabTextActive]}>Huddles</Text>
+          {huddles.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{huddles.length}</Text></View>}
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabBtn, tab === 'requests' && styles.tabBtnActive]} onPress={() => setTab('requests')}>
+          <Text style={[styles.tabText, tab === 'requests' && styles.tabTextActive]}>Requests</Text>
+          {pendingCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>}
         </TouchableOpacity>
       </View>
 
@@ -128,10 +151,14 @@ export default function Mentorship() {
                 <View style={styles.card}>
                   <View style={styles.cardHeader}>
                     <View style={styles.avatar}>
-                      {item.profiles?.avatar_url
-                        ? <Image source={item.profiles.avatar_url} style={styles.avatarImg} contentFit="cover" cachePolicy="none" />
-                        : <Text style={styles.avatarText}>{(item.profiles?.name ?? 'M')[0].toUpperCase()}</Text>
-                      }
+                      <AppImage
+                        uri={item.profiles?.avatar_url}
+                        style={{ width: 44, height: 44 }}
+                        contentFit="cover"
+                        fallbackText={item.profiles?.name ?? 'M'}
+                        fallbackBg={Colors.cardAlt}
+                        isAvatar
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.mentorName}>{item.profiles?.name ?? 'Mentor'}</Text>
@@ -165,6 +192,126 @@ export default function Mentorship() {
             }}
           />
         )
+      )}
+
+      {/* HUDDLES TAB */}
+      {tab === 'huddles' && (
+        <FlatList
+          data={huddles}
+          keyExtractor={(h) => h.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            myMentorProfile ? (
+              <TouchableOpacity style={styles.newHuddleBtn} onPress={() => setHuddleModal(true)}>
+                <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+                <Text style={styles.newHuddleBtnText}>Schedule a Huddle</Text>
+              </TouchableOpacity>
+            ) : null
+          }
+          ListEmptyComponent={(
+            <View style={styles.emptyWrap}>
+              <Ionicons name="radio-outline" size={40} color={Colors.textMuted} />
+              <Text style={styles.empty}>No huddles scheduled yet</Text>
+              <Text style={styles.emptySub}>Mentors can schedule open rooms for the community.</Text>
+            </View>
+          )}
+          renderItem={({ item }) => {
+            const rsvpd = item.huddle_rsvps?.some((r: any) => r.user_id === user?.id) ?? false
+            const rsvpCount = item.huddle_rsvps?.length ?? 0
+            const isLive = item.status === 'live'
+            const isPast = new Date(item.scheduled_at) <= new Date()
+            const isOwner = item.host_id === user?.id
+            return (
+              <View style={styles.huddleCard}>
+                <View style={styles.huddleTop}>
+                  <View style={[styles.huddleStatusPill, { backgroundColor: isLive ? Colors.coral + '22' : isPast ? Colors.gold + '22' : Colors.primary + '18' }]}>
+                    <View style={[styles.statusDot, { backgroundColor: isLive ? Colors.coral : isPast ? Colors.gold : Colors.primary }]} />
+                    <Text style={[styles.huddleStatusText, { color: isLive ? Colors.coral : isPast ? Colors.gold : Colors.primary }]}>
+                      {isLive ? 'Live now' : isPast ? 'Ready to start' : 'Upcoming'}
+                    </Text>
+                  </View>
+                  {isOwner && (
+                    <View style={styles.hostControls}>
+                      {!isLive && (
+                        <TouchableOpacity
+                          style={styles.goLiveBtn}
+                          onPress={() => Alert.alert('Start huddle?', 'This will open the room for everyone.', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Go Live', onPress: () => {
+                              goLive(item.id)
+                              router.push({ pathname: '/huddle/[huddleId]', params: { huddleId: item.id, title: item.title, hostId: item.host_id } })
+                            }},
+                          ])}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.goLiveBtnText}>Go Live</Text>
+                        </TouchableOpacity>
+                      )}
+                      {isLive && (
+                        <TouchableOpacity
+                          style={styles.endBtn}
+                          onPress={() => Alert.alert('End huddle?', undefined, [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'End', style: 'destructive', onPress: () => endHuddle(item.id) },
+                          ])}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.endBtnText}>End</Text>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        onPress={() => Alert.alert('Delete huddle?', undefined, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Delete', style: 'destructive', onPress: () => deleteHuddle(item.id) },
+                        ])}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={Colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.huddleTitle}>{item.title}</Text>
+                {item.description ? <Text style={styles.huddleDesc}>{item.description}</Text> : null}
+                <View style={styles.huddleMeta}>
+                  <View style={styles.huddleMetaItem}>
+                    <Ionicons name="calendar-outline" size={13} color={Colors.textSecondary} />
+                    <Text style={styles.huddleMetaText}>
+                      {new Date(item.scheduled_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <View style={styles.huddleMetaItem}>
+                    <Ionicons name="people-outline" size={13} color={Colors.textSecondary} />
+                    <Text style={styles.huddleMetaText}>{rsvpCount} / {item.capacity} RSVPs</Text>
+                  </View>
+                </View>
+                <Text style={styles.huddleHost}>Hosted by {item.profiles?.name ?? 'Mentor'}</Text>
+                <View style={styles.huddleActions}>
+                  {isLive ? (
+                    <TouchableOpacity
+                      style={styles.joinBtn}
+                      onPress={() => router.push({ pathname: '/huddle/[huddleId]', params: { huddleId: item.id, title: item.title, hostId: item.host_id } })}
+                    >
+                      <Ionicons name="radio" size={15} color="#fff" />
+                      <Text style={styles.joinBtnText}>Join Room</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.rsvpBtn, rsvpd && styles.rsvpBtnDone]}
+                      onPress={() => toggleRSVP({ huddleId: item.id, rsvpd })}
+                    >
+                      <Ionicons name={rsvpd ? 'checkmark-circle' : 'calendar-outline'} size={15} color={rsvpd ? Colors.mint : Colors.primary} />
+                      <Text style={[styles.rsvpBtnText, rsvpd && { color: Colors.mint }]}>
+                        {rsvpd ? 'RSVP\u2019d' : 'RSVP'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            )
+          }}
+        />
       )}
 
       {/* REQUESTS TAB — mentor view: incoming requests to accept/decline */}
@@ -280,6 +427,50 @@ export default function Mentorship() {
           )}
         />
       )}
+
+      {/* Create Huddle Modal */}
+      <Modal visible={huddleModal} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setHuddleModal(false)}>
+              <Text style={styles.cancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Schedule Huddle</Text>
+            <TouchableOpacity onPress={() => handleCreateHuddle(false)} disabled={creatingHuddle}>
+              <Text style={styles.actionBtn}>{creatingHuddle ? 'Saving...' : 'Schedule'}</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalBody}>
+            {[
+              { label: 'Title *', value: huddleTitle, set: setHuddleTitle, placeholder: 'e.g. Breaking into Data Analytics' },
+              { label: 'Description', value: huddleDesc, set: setHuddleDesc, placeholder: 'What will you discuss?' },
+              { label: 'Date (YYYY-MM-DD)', value: huddleDate, set: setHuddleDate, placeholder: '2026-06-15' },
+              { label: 'Time (HH:MM)', value: huddleTime, set: setHuddleTime, placeholder: '18:00' },
+              { label: 'Max capacity', value: huddleCapacity, set: setHuddleCapacity, placeholder: '20', keyboard: 'numeric' as const },
+            ].map((f) => (
+              <View key={f.label} style={styles.field}>
+                <Text style={styles.fieldLabel}>{f.label}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={f.value}
+                  onChangeText={f.set}
+                  placeholder={f.placeholder}
+                  placeholderTextColor={Colors.textMuted}
+                  keyboardType={f.keyboard}
+                />
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.startNowBtn}
+              onPress={() => handleCreateHuddle(true)}
+              disabled={creatingHuddle}
+            >
+              <Ionicons name="radio" size={16} color={Colors.coral} />
+              <Text style={styles.startNowText}>Start Huddle Now</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       {/* Connect Modal */}
       <Modal visible={!!selected} animationType="slide" presentationStyle="pageSheet">
@@ -403,6 +594,33 @@ const styles = StyleSheet.create({
   acceptBtn: { flex: 2, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.primary, alignItems: 'center' },
   acceptBtnText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#fff' },
   chatBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.primary },
+
+  // Huddle cards
+  newHuddleBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: 16, padding: 14, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.primary + '44', backgroundColor: Colors.primary + '0A' },
+  newHuddleBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: Colors.primary },
+  huddleCard: { borderBottomWidth: 1, borderBottomColor: Colors.border, padding: 16 },
+  huddleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  huddleStatusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  huddleStatusText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
+  huddleTitle: { fontSize: 16, fontFamily: 'Sora_600SemiBold', color: Colors.textPrimary, marginBottom: 4 },
+  huddleDesc: { fontSize: 13, fontFamily: 'Inter_400Regular', color: Colors.textSecondary, lineHeight: 18, marginBottom: 10 },
+  huddleMeta: { flexDirection: 'row', gap: 16, marginBottom: 6 },
+  huddleMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  huddleMetaText: { fontSize: 12, fontFamily: 'Inter_400Regular', color: Colors.textSecondary },
+  huddleHost: { fontSize: 12, fontFamily: 'Inter_400Regular', color: Colors.textMuted, marginBottom: 12 },
+  hostControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  goLiveBtn: { backgroundColor: Colors.coral + '22', paddingHorizontal: 12, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.coral + '55' },
+  goLiveBtnText: { fontSize: 12, fontFamily: 'Inter_700Bold', color: Colors.coral },
+  endBtn: { backgroundColor: Colors.textMuted + '22', paddingHorizontal: 12, paddingVertical: 5, borderRadius: Radius.full },
+  endBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: Colors.textMuted },
+  startNowBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, padding: 14, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.coral + '55', backgroundColor: Colors.coral + '0A' },
+  startNowText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: Colors.coral },
+  joinBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.coral, paddingHorizontal: 18, paddingVertical: 9, borderRadius: Radius.full },
+  joinBtnText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#fff' },
+  rsvpBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: Colors.primary + '55', paddingHorizontal: 18, paddingVertical: 9, borderRadius: Radius.full },
+  rsvpBtnDone: { borderColor: Colors.mint + '55' },
+  rsvpBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: Colors.primary },
 
   // Modals
   modal: { flex: 1, backgroundColor: Colors.background },

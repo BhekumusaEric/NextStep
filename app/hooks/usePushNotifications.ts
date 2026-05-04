@@ -1,29 +1,35 @@
 import { useEffect, useRef } from 'react'
-import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-})
+// Metro bundles all imports at build time so we cannot lazy-require.
+// Instead we import but guard every single call behind isExpoGo.
+import * as Notifications from 'expo-notifications'
 
-// Expo Go removed push notification support in SDK 53
-// Only run in standalone/development builds
-const isExpoGo = Constants.appOwnership === 'expo'
+const isExpoGo = Constants.executionEnvironment === 'storeClient'
+
+// Only set handler in real builds — this is safe because setNotificationHandler
+// does NOT trigger the push token listener
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  })
+}
 
 export function usePushNotifications() {
   const user = useAuthStore((s) => s.user)
-  const notificationListener = useRef<Notifications.EventSubscription>()
-  const responseListener = useRef<Notifications.EventSubscription>()
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null)
+  const responseListener = useRef<Notifications.EventSubscription | null>(null)
 
   useEffect(() => {
+    // Hard bail in Expo Go — no notification calls at all
     if (!user || isExpoGo) return
 
     registerForPushNotifications().then((token) => {

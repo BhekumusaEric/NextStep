@@ -8,7 +8,7 @@ const tabs: { name: string; label: string; icon: IconName; activeIcon: IconName 
   { name: 'home', label: 'Home', icon: 'compass-outline', activeIcon: 'compass' },
   { name: 'community', label: 'Community', icon: 'people-outline', activeIcon: 'people' },
   { name: 'mentorship', label: 'Mentors', icon: 'star-outline', activeIcon: 'star' },
-  { name: 'notifications', label: 'Alerts', icon: 'notifications-outline', activeIcon: 'notifications' },
+  { name: 'prep', label: 'Get Ready', icon: 'rocket-outline', activeIcon: 'rocket' },
   { name: 'profile', label: 'Profile', icon: 'person-outline', activeIcon: 'person' },
 ]
 

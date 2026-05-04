@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
-import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { useProfile, useUpdateProfile, useUploadAvatar } from '../hooks/useProfile'
 import { Colors, Radius } from '../lib/design'
+import AppImage from '../components/AppImage'
 
 export default function EditProfile() {
   const router = useRouter()
@@ -73,22 +73,18 @@ export default function EditProfile() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={90}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading}>
-            {localAvatar ? (
-              <Image source={localAvatar} style={styles.avatar} contentFit="cover" />
-            ) : profile?.avatar_url ? (
-              <Image source={profile.avatar_url} style={styles.avatar} contentFit="cover" />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarText}>{(name || 'U')[0].toUpperCase()}</Text>
-              </View>
-            )}
-            {uploading ? (
-              <ActivityIndicator style={styles.avatarOverlay} color="#fff" />
-            ) : (
-              <View style={styles.avatarOverlay}>
-                <Ionicons name="camera" size={16} color="#fff" />
-              </View>
-            )}
+            <AppImage
+              uri={localAvatar ?? profile?.avatar_url}
+              style={styles.avatar}
+              contentFit="cover"
+              fallbackText={name || 'U'}
+              fallbackBg={Colors.cardAlt}
+              isAvatar
+            />
+            {uploading
+              ? <ActivityIndicator style={styles.avatarOverlay} color="#fff" />
+              : <View style={styles.avatarOverlay}><Ionicons name="camera" size={16} color="#fff" /></View>
+            }
           </TouchableOpacity>
 
           {[

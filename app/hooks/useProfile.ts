@@ -56,8 +56,9 @@ export function useUploadAvatar() {
       if (uploadError) throw uploadError
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      // Append timestamp to bust CDN cache
-      const publicUrl = `${data.publicUrl}?t=${Date.now()}`
+      // Use stable URL without timestamp — expo-image caches by URL
+      // Only add cache buster when the file actually changes (upsert guarantees new content)
+      const publicUrl = `${data.publicUrl}?v=${Date.now()}`
 
       const { error: updateError } = await supabase
         .from('profiles')
